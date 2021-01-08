@@ -567,6 +567,11 @@ struct rd_kafka_s {
         rd_ts_t rk_ts_created; /**< Timestamp (monotonic clock) of
                                 *   rd_kafka_t creation. */
 
+
+        /** Oneshot timer to trigger immediate
+         *  topic scans to retrieve topic metadata. */
+        rd_kafka_timer_t rk_immediate_topic_scan_tmr;
+
         /**
          * Background thread and queue,
          * enabled by setting `background_event_cb()`.

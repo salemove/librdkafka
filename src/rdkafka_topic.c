@@ -56,6 +56,7 @@ rd_kafka_topic_metadata_update(rd_kafka_topic_t *rkt,
                                const struct rd_kafka_metadata_topic *mdt,
                                const rd_kafka_metadata_topic_internal_t *mdit,
                                rd_ts_t ts_age);
+static void rd_kafka_schedule_immediate_topic_scan (rd_kafka_t *rk);
 
 
 /**
@@ -484,6 +485,9 @@ rd_kafka_topic_t *rd_kafka_topic_new0(rd_kafka_t *rk,
                     rkt, &rkmce->rkmce_mtopic,
                     &rkmce->rkmce_metadata_internal_topic,
                     rkmce->rkmce_ts_insert);
+        } else {
+                /* Schedule immedate topic scan / metadata refresh */
+                rd_kafka_schedule_immediate_topic_scan(rk);
         }
 
         if (do_lock)
@@ -1718,6 +1722,36 @@ void rd_kafka_topic_scan_all(rd_kafka_t *rk, rd_ts_t now) {
                     rk->rk_conf.allow_auto_create_topics,
                     rd_false /*!cgrp_update*/, "refresh unavailable topics");
         rd_list_destroy(&query_topics);
+}
+
+
+/**
+ * @brief Immediate topic scan timer callback.
+ *
+ * @locality rdkafka main thread
+ */
+
+static void rd_kafka_immediate_topic_scan_tmr_cb (rd_kafka_timers_t *rkts,
+                                                  void *arg) {
+        rd_kafka_t *rk = arg;
+        rd_kafka_topic_scan_all(rk, rd_clock());
+}
+
+
+/**
+ * @brief Schedule an immediate topic scan (from the main thread).
+ *
+ * Use this to asynchronously trigger metadata refresh for all known topics.
+ *
+ * @locality any thread
+ */
+static void rd_kafka_schedule_immediate_topic_scan (rd_kafka_t *rk) {
+        rd_kafka_timer_start_oneshot(&rk->rk_timers,
+                                     &rk->rk_immediate_topic_scan_tmr,
+                                     rd_false/*don't restart if scheduled*/,
+                                     1/*1us*/,
+                                     rd_kafka_immediate_topic_scan_tmr_cb,
+                                     rk);
 }
 
 
