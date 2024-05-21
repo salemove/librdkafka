@@ -1,3 +1,28 @@
+
+# librdkafka v2.4.1
+
+librdkafka v2.4.1 is a maintenance release:
+
+ * Fix to remove fetch queue messages that blocked the destroy of rdkafka
+   instances (#4724)
+
+
+## Fixes
+
+### Consumer fixes
+
+ * Issues: 
+   Fix to remove fetch queue messages that blocked the destroy of rdkafka
+   instances. Circular dependencies from a partition fetch queue message to
+   the same partition blocked the destroy of an instance, that happened
+   in case the partition was removed from the cluster while it was being
+   consumed. Solved by purging internal partition queue, after being stopped
+   and removed, to allow reference count to reach zero and trigger a destroy.
+   Happening since 2.0.2 (#4724).
+
+
+
+
 # librdkafka v2.4.0
 
 librdkafka v2.4.0 is a feature release:
